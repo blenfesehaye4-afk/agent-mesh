@@ -25,6 +25,7 @@ class ChatCompletionRequest(BaseModel):
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: Optional[int] = Field(default=1024, ge=1)
     stream: bool = False
+    trace_id: Optional[str] = None
 
 
 class Choice(BaseModel):
@@ -49,6 +50,10 @@ class ChatCompletionResponse(BaseModel):
     cached: bool = False
     similarity_score: Optional[float] = None
     pii_redacted: bool = False
+    trace_id: Optional[str] = None
+    effective_model: Optional[str] = None
+    cost_usd: Optional[float] = None
+    downgraded: bool = False
 
 
 class ProxyMetrics(BaseModel):
@@ -58,3 +63,4 @@ class ProxyMetrics(BaseModel):
     tokens_saved: int = 0
     pii_violations_total: int = 0
     blocked_injections_total: int = 0
+    total_spend_usd: float = 0.0
