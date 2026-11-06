@@ -8,7 +8,7 @@ client = TestClient(app)
 def test_health_check():
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "healthy", "service": "agent-mesh"}
+    assert response.json() == {"status": "healthy", "service": "agent-mesh", "version": "0.2.0"}
 
 
 def test_chat_completions_endpoint():

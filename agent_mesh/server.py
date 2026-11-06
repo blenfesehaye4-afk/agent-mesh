@@ -1,15 +1,16 @@
-"""FastAPI Application exposing OpenAI-compatible endpoints with governance."""
+"""FastAPI Application exposing OpenAI-compatible endpoints with governance & streaming."""
 
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
 
 from .gateway import AgentMeshGateway
 from .models import ChatCompletionRequest, ChatCompletionResponse
+from .streaming import stream_chat_completion
 
 app = FastAPI(
     title="AgentMesh AI Gateway",
-    description="High-performance AI agent gateway with semantic caching, PII guardrails & proxy.",
-    version="0.1.0",
+    description="High-performance AI agent gateway with semantic caching, PII guardrails, streaming & proxy.",
+    version="0.2.0",
 )
 
 gateway = AgentMeshGateway()
@@ -17,14 +18,23 @@ gateway = AgentMeshGateway()
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy", "service": "agent-mesh"}
+    return {"status": "healthy", "service": "agent-mesh", "version": "0.2.0"}
 
 
-@app.post("/v1/chat/completions", response_model=ChatCompletionResponse)
+@app.post("/v1/chat/completions")
 async def chat_completions(req: ChatCompletionRequest, request: Request):
     tenant = request.headers.get("X-Tenant-ID", "default")
     try:
         response = await gateway.complete(req, tenant_id=tenant)
+
+        # Handle streaming requested
+        if req.stream:
+            content = response.choices[0].message.content
+            return StreamingResponse(
+                stream_chat_completion(model=req.model, content=content),
+                media_type="text/event-stream",
+            )
+
         return response
     except PermissionError as pe:
         raise HTTPException(status_code=429, detail=str(pe))
